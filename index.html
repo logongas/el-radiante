@@ -1,0 +1,610 @@
+<!--
+Copyright (C) 2026 Tu Nombre o Empresa
+
+Este programa es software libre: puedes redistribuirlo y/o modificarlo
+bajo los términos de la GNU Affero General Public License publicada por
+la Free Software Foundation, ya sea la versión 3 de la licencia o
+(cualquier versión posterior).
+
+Este programa se distribuye con la esperanza de que sea útil,
+pero SIN NINGUNA GARANTÍA; ni siquiera la garantía implícita de
+COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO PARTICULAR.
+
+Debes haber recibido una copia de la GNU Affero General Public License
+junto con este programa. Si no, consulta https://www.gnu.org/licenses/.
+-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Radiante · la fórmula entera de una red neuronal</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0a0c18; --bg2:#0e1124; --panel:#121738; --panel2:#171d44;
+    --line:#272d57; --line2:#343b6e;
+    --ink:#eef0e4; --soft:#c7cbe6; --muted:#7e87b6; --faint:#565d8c;
+    --teal:#5ee3c9; --violet:#9b8cf2;
+    --yellow:#f2c84b; --green:#74c365; --red:#e0584d;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1200px 700px at 78% -10%, rgba(94,227,201,.10), transparent 60%),
+      radial-gradient(900px 600px at 0% 110%, rgba(155,140,242,.10), transparent 55%),
+      var(--bg);
+    color:var(--ink);
+    font-family:"Inter",system-ui,-apple-system,sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 22px 80px}
+
+  /* header */
+  header{margin-bottom:26px}
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--teal);margin:0 0 10px;
+  }
+  h1{
+    font-family:"Fraunces",Georgia,serif;font-weight:900;
+    font-size:clamp(34px,6vw,60px);line-height:.98;letter-spacing:-.015em;
+    margin:0 0 14px;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--violet)}
+  .lede{max-width:62ch;color:var(--soft);font-size:16px;margin:0}
+  .lede b{color:var(--ink);font-weight:600}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:22px;margin-top:30px}
+  @media(max-width:880px){.grid{grid-template-columns:1fr}}
+  .rightcol{display:flex;flex-direction:column;gap:22px}
+
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--bg2));
+    border:1px solid var(--line);border-radius:var(--radius);padding:20px;
+  }
+  .card h2{
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 16px;font-weight:500;
+  }
+
+  /* controls */
+  .field{margin-bottom:18px}
+  .field > label{display:block;font-size:13px;color:var(--soft);margin-bottom:7px;font-weight:500}
+  .stepper{display:flex;align-items:stretch;gap:0;width:fit-content;
+    border:1px solid var(--line2);border-radius:10px;overflow:hidden;background:#0c1024}
+  .stepper button{
+    width:38px;border:0;background:transparent;color:var(--teal);
+    font-size:20px;cursor:pointer;font-family:inherit;line-height:1;
+  }
+  .stepper button:hover{background:rgba(94,227,201,.12)}
+  .stepper button:disabled{color:var(--faint);cursor:not-allowed}
+  .stepper input{
+    width:50px;text-align:center;border:0;background:transparent;color:var(--ink);
+    font-family:"JetBrains Mono",monospace;font-size:16px;-moz-appearance:textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+  .layers{display:flex;flex-direction:column;gap:9px}
+  .layer-row{
+    display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
+    background:#0c1126;border:1px solid var(--line);border-radius:11px;padding:9px 10px;
+  }
+  .layer-tag{
+    font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);
+    width:54px;line-height:1.15;
+  }
+  .layer-tag b{display:block;color:var(--soft);font-size:12px}
+  .mini-stepper{display:flex;align-items:center;gap:2px}
+  .mini-stepper button{width:26px;height:26px;border:1px solid var(--line2);background:#0a0e22;
+    color:var(--teal);border-radius:7px;cursor:pointer;font-size:15px;line-height:1}
+  .mini-stepper button:hover{background:rgba(94,227,201,.12)}
+  .mini-stepper .n{width:24px;text-align:center;font-family:"JetBrains Mono",monospace;font-size:14px}
+  select{
+    width:100%;background:#0a0e22;color:var(--ink);border:1px solid var(--line2);
+    border-radius:8px;padding:7px 8px;font-family:inherit;font-size:13px;cursor:pointer;
+  }
+  .del{width:28px;height:28px;border:1px solid transparent;background:transparent;color:var(--faint);
+    border-radius:7px;cursor:pointer;font-size:16px}
+  .del:hover{color:var(--red);background:rgba(224,88,77,.10)}
+  .del:disabled{opacity:.3;cursor:not-allowed}
+
+  .add{margin-top:11px;width:100%;background:transparent;border:1px dashed var(--line2);
+    color:var(--teal);border-radius:10px;padding:10px;cursor:pointer;font-family:inherit;font-size:13px}
+  .add:hover{background:rgba(94,227,201,.07);border-color:var(--teal)}
+
+  .presets{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+  .chip{background:#0c1126;border:1px solid var(--line2);color:var(--soft);
+    border-radius:999px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+  .chip:hover{border-color:var(--violet);color:var(--ink)}
+
+  .divider{height:1px;background:var(--line);margin:20px 0}
+
+  /* diagram */
+  .stage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .diagram-wrap{width:100%;max-width:100%;max-height:min(46vh,360px);overflow:auto}
+  svg.net{display:block}
+  .legend{display:flex;gap:16px;font-size:12px;color:var(--muted);font-family:"JetBrains Mono",monospace}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+  /* view toggle + zoom */
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+  .seg button{border:0;background:transparent;color:var(--muted);padding:8px 14px;font-family:inherit;
+    font-size:13px;cursor:pointer}
+  .seg button.on{background:var(--teal);color:#06241f;font-weight:600}
+  .zoom{display:flex;align-items:center;gap:10px;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted)}
+  .zoom input[type=range]{accent-color:var(--teal);width:130px}
+
+  /* formula wall */
+  .wall{
+    position:relative;background:
+      radial-gradient(700px 320px at 50% 0%, rgba(94,227,201,.07), transparent 70%),
+      linear-gradient(180deg,#080a16,#0b0e20);
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:26px 22px;min-height:200px;max-height:min(58vh,520px);overflow:auto;
+  }
+  .wall::before{content:"";position:absolute;inset:0;border-radius:var(--radius);pointer-events:none;
+    box-shadow:inset 0 0 80px rgba(94,227,201,.05)}
+  .formula{font-size:21px;line-height:1.2;width:max-content;min-width:100%}
+  .katex{color:#f2f3e8;text-shadow:0 0 14px rgba(94,227,201,.22)}
+  .katex-display{margin:.4em 0 1.1em;text-align:left}
+  .katex-display>.katex{text-align:left}
+  .nrow{margin-bottom:10px}
+  .nlabel{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--teal);
+    letter-spacing:.1em;margin-bottom:-2px;display:block}
+  .raw{margin-top:8px}
+  .raw summary{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--faint);cursor:pointer;list-style:none}
+  .raw summary:hover{color:var(--muted)}
+  .raw code{display:block;margin-top:7px;background:#070912;border:1px solid var(--line);border-radius:8px;
+    padding:10px;color:var(--soft);font-family:"JetBrains Mono",monospace;font-size:11px;
+    white-space:pre-wrap;word-break:break-all;max-height:160px;overflow:auto;user-select:all}
+
+  .overflow-note{color:var(--soft);font-size:14px;line-height:1.6}
+  .overflow-note b{color:var(--yellow)}
+
+  /* meter */
+  .meter{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:18px}
+  .meter div{background:var(--bg2);padding:13px 14px}
+  .meter .k{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--muted)}
+  .meter .v{font-family:"Fraunces",Georgia,serif;font-size:24px;font-weight:600;color:var(--ink);margin-top:3px}
+  .meter .v small{font-size:13px;color:var(--violet);font-family:"JetBrains Mono",monospace;font-weight:400}
+  @media(max-width:560px){.meter{grid-template-columns:repeat(2,1fr)}}
+
+  .foot{margin-top:34px;color:var(--faint);font-size:12.5px;font-family:"JetBrains Mono",monospace;line-height:1.7}
+  .foot a{color:var(--muted)}
+
+  :focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  /* Pantallas anchas: bloquear todo a la altura de la ventana. Nada se sale;
+     la fórmula ocupa el hueco restante y hace scroll dentro de su caja. */
+  @media(min-width:881px){
+    .wrap{max-width:none;width:100%;margin:0;padding:0 10px;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+    header{flex:0 0 auto;margin:0;padding:14px 22px 12px}
+    h1{font-size:clamp(24px,3vw,38px)}
+    .lede{font-size:13.5px}
+    .grid{flex:1 1 auto;min-height:0;margin:0;gap:14px;grid-template-rows:minmax(0,1fr);align-items:stretch}
+    .grid > *{min-height:0;min-width:0}
+    .grid > .card{max-height:100%;overflow:auto}
+    .rightcol{gap:14px;min-height:0;height:100%}
+    .rightcol > .card{margin:0}
+    .rightcol > .card:nth-child(1){flex:0 0 auto}
+    .rightcol > .card:nth-child(2){flex:1 1 auto;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+    .diagram-wrap{max-height:30vh}
+    .wall{flex:1 1 auto;min-height:0;max-height:none}
+    .foot{flex:0 0 auto;margin:0;padding:6px 22px 10px;font-size:11px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Radiante Primario</p>
+    <h1>La red entera,<br><em>en una sola fórmula</em></h1>
+    <p class="lede">Casi nadie la escribe completa: se quedan en la fórmula de cada neurona por separado y se pierde la idea de que <b>una red no es más que una función</b>. Aquí se sustituye recursivamente neurona dentro de neurona hasta el final. Cambia las entradas, las capas o la activación y mira cómo crece.</p>
+  </header>
+
+  <div class="grid">
+    <!-- ── CONTROLES ── -->
+    <section class="card">
+      <h2>Arquitectura</h2>
+
+      <div class="field">
+        <label for="inN">Número de entradas</label>
+        <div class="stepper">
+          <button id="inMinus" aria-label="Quitar una entrada">−</button>
+          <input id="inN" type="number" min="1" max="8" value="3" aria-label="Número de entradas">
+          <button id="inPlus" aria-label="Añadir una entrada">+</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Capas <span style="color:var(--faint)">(de la primera a la salida)</span></label>
+        <div class="layers" id="layers"></div>
+        <button class="add" id="addLayer">+ Añadir capa</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field" style="margin-bottom:0">
+        <label>Ejemplos</label>
+        <div class="presets" id="presets"></div>
+      </div>
+    </section>
+
+    <!-- ── ESQUEMA + FÓRMULA ── -->
+    <div class="rightcol">
+      <section class="card">
+        <div class="stage-head">
+          <h2 style="margin:0">Esquema</h2>
+          <div class="legend">
+            <span><i class="dot" style="background:var(--yellow)"></i>entrada</span>
+            <span><i class="dot" style="background:var(--green)"></i>oculta</span>
+            <span><i class="dot" style="background:var(--red)"></i>salida</span>
+          </div>
+        </div>
+        <div class="diagram-wrap"><svg class="net" id="net" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </section>
+
+      <section class="card">
+        <div class="toolbar">
+          <div class="seg" role="tablist" aria-label="Vista de la fórmula">
+            <button id="vFull" class="on" role="tab">Fórmula completa</button>
+            <button id="vPart" role="tab">Por neurona</button>
+          </div>
+          <div class="zoom">
+            <span>tamaño fuente</span>
+            <input id="fsize" type="range" min="6" max="46" value="21" aria-label="Tamaño de la fuente de la fórmula">
+            <span id="fsizeV" style="width:46px">21&nbsp;px</span>
+          </div>
+        </div>
+        <div class="wall"><div class="formula" id="formula"></div></div>
+
+        <div class="meter">
+          <div><div class="k">Parámetros</div><div class="v" id="mParams">0</div></div>
+          <div><div class="k">Profundidad</div><div class="v" id="mDepth">0 <small>capas</small></div></div>
+          <div><div class="k">Tamaño LaTeX</div><div class="v" id="mChars">0 <small>car.</small></div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <p class="foot">
+    El nombre es un guiño al <b style="color:var(--muted)">Radiante Primario</b> de la <i>Segunda Fundación</i> de Asimov: la sala donde el Plan entero estaba escrito en ecuaciones por las paredes.<br>
+    Notación: w<sup>(l)</sup><sub>j,k</sub> = peso de la capa l, neurona j, conexión k · b<sup>(l)</sup><sub>j</sub> = sesgo · z = parte lineal · y = salida tras la activación.<br>
+    <span style="color:var(--teal)">build 16 · sin preset del examen</span> — si no ves esta línea, estás en una versión cacheada (recarga con Ctrl/Cmd + Shift + R).
+  </p>
+</div>
+
+<script>
+/* ───────────────────────── estado ───────────────────────── */
+const state = {
+  inputs: 3,
+  layers: [
+    { neurons: 1, activation: "sigmoid" },
+    { neurons: 1, activation: "swish" }
+  ]
+};
+let view = "full";
+
+const MAXN = 8, MAXLAYERS = 7, MAXINPUTS = 8;
+const RENDER_CAP = 70000; // tope de seguridad: por encima, KaTeX tardaría demasiado
+
+/* ─────────────────── funciones de activación ─────────────────── */
+/* wrap(E): recibe la expresión lineal z y devuelve la salida y.
+   isSum: true si la salida es una suma "desnuda" (necesita paréntesis al multiplicarse). */
+const ACT = {
+  linear:    { label:"Lineal",     isSum:true,  wrap:E=>E },
+  sigmoid:   { label:"Sigmoide",   isSum:false, wrap:E=>`\\dfrac{1}{1+e^{-\\left(${E}\\right)}}` },
+  tanh:      { label:"Tanh",       isSum:false, wrap:E=>`\\dfrac{e^{${E}}-e^{-\\left(${E}\\right)}}{e^{${E}}+e^{-\\left(${E}\\right)}}` },
+  relu:      { label:"ReLU",       isSum:false, wrap:E=>`\\max\\!\\left(0,\\,${E}\\right)` },
+  leakyrelu: { label:"Leaky ReLU", isSum:false, wrap:E=>`\\begin{cases}${E} & >0\\\\ \\alpha\\,${E} & \\le 0\\end{cases}` },
+  elu:       { label:"ELU",        isSum:false, wrap:E=>`\\begin{cases}${E} & >0\\\\ \\alpha\\!\\left(e^{${E}}-1\\right) & \\le 0\\end{cases}` },
+  selu:      { label:"SELU",       isSum:false, wrap:E=>`\\lambda\\begin{cases}${E} & >0\\\\ \\alpha\\!\\left(e^{${E}}-1\\right) & \\le 0\\end{cases}` },
+  swish:     { label:"Swish",      isSum:false, wrap:E=>`\\dfrac{${E}}{1+e^{-\\left(${E}\\right)}}` },
+  softmax:   { label:"Softmax",    isSum:false, wrap:null } // se trata aparte
+};
+const ACT_ORDER = ["linear","sigmoid","tanh","relu","leakyrelu","elu","selu","swish","softmax"];
+
+/* ─────────────────── generación recursiva ─────────────────── */
+// z de la neurona j de la capa l, a partir de las salidas previas (array {tex,isSum})
+function buildZ(prev, l, j){
+  const terms = prev.map((p,idx)=>{
+    const k = idx+1;
+    const w = `w^{(${l})}_{${j},${k}}`;
+    return p.isSum ? `${w}\\!\\left(${p.tex}\\right)` : `${w}\\,${p.tex}`;
+  });
+  return terms.join("+") + `+b^{(${l})}_{${j}}`;
+}
+
+// Fórmula COMPLETA: expande hasta las entradas x_k
+function buildFull(){
+  let prev = [];
+  for(let k=1;k<=state.inputs;k++) prev.push({tex:`x_{${k}}`, isSum:false});
+
+  state.layers.forEach((layer, li)=>{
+    const l = li+1;
+    const next = [];
+    if(layer.activation==="softmax"){
+      const zs = [];
+      for(let j=1;j<=layer.neurons;j++) zs.push(buildZ(prev,l,j));
+      const denom = zs.map(z=>`e^{\\,${z}}`).join("+");
+      for(let j=0;j<layer.neurons;j++)
+        next.push({tex:`\\dfrac{e^{\\,${zs[j]}}}{${denom}}`, isSum:false});
+    }else{
+      const act = ACT[layer.activation];
+      for(let j=1;j<=layer.neurons;j++){
+        const z = buildZ(prev,l,j);
+        next.push({tex:act.wrap(z), isSum:act.isSum});
+      }
+    }
+    prev = next;
+  });
+  return prev.map(p=>p.tex); // una entrada por neurona de salida
+}
+
+// Vista POR NEURONA: cada capa referida a las salidas de la anterior (un nivel)
+function buildPartial(){
+  const rows = [];
+  state.layers.forEach((layer, li)=>{
+    const l = li+1;
+    const prevCount = li===0 ? state.inputs : state.layers[li-1].neurons;
+    const sym = k => li===0 ? `x_{${k}}` : `y^{(${l-1})}_{${k}}`;
+    for(let j=1;j<=layer.neurons;j++){
+      const terms=[];
+      for(let k=1;k<=prevCount;k++) terms.push(`w^{(${l})}_{${j},${k}}\\,${sym(k)}`);
+      const z = terms.join("+") + `+b^{(${l})}_{${j}}`;
+      let rhs;
+      if(layer.activation==="softmax") rhs=`\\operatorname{softmax}\\!\\left(${z}\\right)`;
+      else rhs = ACT[layer.activation].wrap(z);
+      rows.push(`y^{(${l})}_{${j}} = ${rhs}`);
+    }
+  });
+  return rows;
+}
+
+/* ─────────────────── render de la fórmula ─────────────────── */
+function renderFormula(){
+  const host = document.getElementById("formula");
+  host.innerHTML = "";
+  const L = state.layers.length;
+
+  let items, labelFor;
+  if(view==="full"){
+    const outs = buildFull();
+    items = outs.map((tex,i)=>({lhs:`y^{(${L})}_{${i+1}}`, tex}));
+    labelFor = i => `salida y^(${L})_${i+1}`;
+  }else{
+    items = buildPartial().map(t=>({raw:t}));
+  }
+
+  // tope de seguridad
+  const totalChars = items.reduce((a,it)=> a + (it.tex? it.tex.length : it.raw.length), 0);
+  if(view==="full" && totalChars>RENDER_CAP){
+    host.innerHTML = `<p class="overflow-note">La fórmula tiene <b>${totalChars.toLocaleString("es")}</b> caracteres de LaTeX: es tan colosal que dibujarla congelaría el navegador. Justo la idea que querías transmitir 🙂<br>Reduce alguna capa o usa la vista <b>Por neurona</b> para verla por tramos. El contador de abajo sigue midiendo el monstruo entero.</p>`;
+    return;
+  }
+
+  items.forEach((it,i)=>{
+    const block = document.createElement("div");
+    block.className = "nrow";
+    if(view==="full"){
+      const lab = document.createElement("span");
+      lab.className="nlabel"; lab.textContent = labelFor(i);
+      block.appendChild(lab);
+    }
+    const eq = document.createElement("div");
+    const tex = view==="full" ? `${it.lhs} = ${it.tex}` : it.raw;
+    try{
+      katex.render(tex, eq, {displayMode:true, throwOnError:true, strict:false, maxExpand:1000000000});
+    }catch(err){ eq.textContent = "（no se pudo renderizar）"; }
+    block.appendChild(eq);
+
+    // LaTeX en crudo para copiar/pegar
+    const det = document.createElement("details");
+    det.className="raw";
+    det.innerHTML = `<summary>ver / copiar LaTeX</summary><code>${tex.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</code>`;
+    block.appendChild(det);
+
+    host.appendChild(block);
+  });
+  applyFont();
+}
+
+/* ─────────────────── esquema SVG ─────────────────── */
+function renderDiagram(){
+  const svg = document.getElementById("net");
+  const cols = [{count:state.inputs, kind:"in"}]
+    .concat(state.layers.map((l,i)=>({count:l.neurons, kind:(i===state.layers.length-1?"out":"hid"), act:l.activation})));
+
+  const colGap = 150, padX=46, padTop=44, padBot=30, r=15, nodeGap=46;
+  const maxN = Math.max(...cols.map(c=>c.count));
+  const W = padX*2 + (cols.length-1)*colGap;
+  const H = padTop + padBot + (maxN-1)*nodeGap + r*2;
+  const colCount = cols.length;
+
+  // posiciones
+  const pos = cols.map((c,ci)=>{
+    const x = padX + r + ci*colGap;
+    const colH = (c.count-1)*nodeGap;
+    const y0 = padTop + r + (((maxN-1)*nodeGap) - colH)/2;
+    return Array.from({length:c.count},(_, ni)=>({x, y:y0+ni*nodeGap}));
+  });
+
+  const C = {in:"var(--yellow)", hid:"var(--green)", out:"var(--red)"};
+  let edges="", nodes="", labels="";
+
+  for(let ci=0;ci<colCount-1;ci++){
+    pos[ci].forEach(a=>pos[ci+1].forEach(b=>{
+      edges+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="var(--line2)" stroke-width="1" opacity="0.55"/>`;
+    }));
+  }
+  cols.forEach((c,ci)=>{
+    pos[ci].forEach((p,ni)=>{
+      nodes+=`<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${C[c.kind]}" stroke="#0a0c18" stroke-width="2"/>`;
+      if(c.kind==="in") nodes+=`<text x="${p.x}" y="${p.y+4}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="#1a1405">x${sub(ni+1)}</text>`;
+    });
+    // etiqueta de columna
+    const cx = pos[ci][0].x;
+    const top = padTop - 18;
+    let t1 = ci===0 ? "Entradas" : `Capa ${ci}`;
+    labels+=`<text x="${cx}" y="${top}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" fill="var(--soft)">${t1}</text>`;
+    if(c.act){
+      labels+=`<text x="${cx}" y="${H-10}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--teal)">${ACT[c.act].label}</text>`;
+    }
+  });
+
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H);
+  svg.innerHTML = edges+nodes+labels;
+}
+function sub(n){ return String(n).split("").map(d=>"₀₁₂₃₄₅₆₇₈₉"[+d]).join(""); }
+
+/* ─────────────────── medidor ─────────────────── */
+function renderMeter(){
+  let params=0, prev=state.inputs;
+  state.layers.forEach(l=>{ params += l.neurons*(prev+1); prev=l.neurons; });
+  const chars = buildFull().reduce((a,s)=>a+s.length,0);
+
+  document.getElementById("mParams").textContent = params.toLocaleString("es");
+  document.getElementById("mDepth").innerHTML = `${state.layers.length} <small>capas</small>`;
+  document.getElementById("mChars").innerHTML = `${chars.toLocaleString("es")} <small>car.</small>`;
+}
+
+/* ─────────────────── controles ─────────────────── */
+function renderLayers(){
+  const box = document.getElementById("layers");
+  box.innerHTML="";
+  state.layers.forEach((layer,i)=>{
+    const last = i===state.layers.length-1;
+    const row = document.createElement("div");
+    row.className="layer-row";
+
+    const tag = document.createElement("div");
+    tag.className="layer-tag";
+    tag.innerHTML = `<b>Capa ${i+1}</b>${last?"salida":"oculta"}`;
+    row.appendChild(tag);
+
+    const mid = document.createElement("div");
+    mid.style.display="flex"; mid.style.flexDirection="column"; mid.style.gap="7px";
+
+    const ms = document.createElement("div");
+    ms.className="mini-stepper";
+    ms.innerHTML = `<button data-act="dec" aria-label="Menos neuronas">−</button>
+      <span class="n">${layer.neurons}</span>
+      <button data-act="inc" aria-label="Más neuronas">+</button>
+      <span style="font-size:11px;color:var(--muted);margin-left:4px">neuronas</span>`;
+    ms.querySelector('[data-act="dec"]').onclick=()=>{ if(layer.neurons>1){layer.neurons--; refresh(true);} };
+    ms.querySelector('[data-act="inc"]').onclick=()=>{ if(layer.neurons<MAXN){layer.neurons++; refresh(true);} };
+    mid.appendChild(ms);
+
+    const sel = document.createElement("select");
+    sel.setAttribute("aria-label",`Activación capa ${i+1}`);
+    ACT_ORDER.forEach(key=>{
+      const o=document.createElement("option");
+      o.value=key; o.textContent=ACT[key].label;
+      if(layer.activation===key) o.selected=true;
+      sel.appendChild(o);
+    });
+    sel.onchange=()=>{ layer.activation=sel.value; refresh(false); };
+    mid.appendChild(sel);
+    row.appendChild(mid);
+
+    const del = document.createElement("button");
+    del.className="del"; del.innerHTML="✕"; del.setAttribute("aria-label",`Eliminar capa ${i+1}`);
+    del.disabled = state.layers.length<=1;
+    del.onclick=()=>{ state.layers.splice(i,1); refresh(true); };
+    row.appendChild(del);
+
+    box.appendChild(row);
+  });
+}
+
+/* presets */
+const PRESETS = [
+  { name:"Flores · 2→6→12→6→1", inputs:2, layers:[{neurons:6,activation:"sigmoid"},{neurons:12,activation:"sigmoid"},{neurons:6,activation:"sigmoid"},{neurons:1,activation:"sigmoid"}] },
+  { name:"Clasif. 4 clases", inputs:4, layers:[{neurons:5,activation:"relu"},{neurons:4,activation:"softmax"}] },
+  { name:"Mínima · 1→1", inputs:1, layers:[{neurons:1,activation:"sigmoid"}] }
+];
+function renderPresets(){
+  const box=document.getElementById("presets");
+  PRESETS.forEach(p=>{
+    const b=document.createElement("button");
+    b.className="chip"; b.textContent=p.name;
+    b.onclick=()=>{
+      state.inputs=p.inputs;
+      state.layers=p.layers.map(l=>({...l}));
+      document.getElementById("inN").value=state.inputs;
+      refresh(true);
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ─────────────────── tamaño de fuente ─────────────────── */
+function applyFont(){
+  const px = +document.getElementById("fsize").value;
+  document.getElementById("formula").style.fontSize = px+"px";
+  document.getElementById("fsizeV").innerHTML = px+"&nbsp;px";
+}
+
+/* ─────────────────── orquestación ─────────────────── */
+function refresh(structural){
+  if(structural) renderLayers();
+  renderDiagram();
+  renderFormula();
+  renderMeter();
+}
+
+/* entradas */
+const inN=document.getElementById("inN");
+function setInputs(v){
+  v=Math.max(1,Math.min(MAXINPUTS,v|0));
+  state.inputs=v; inN.value=v; refresh(false);
+}
+document.getElementById("inMinus").onclick=()=>setInputs(state.inputs-1);
+document.getElementById("inPlus").onclick=()=>setInputs(state.inputs+1);
+inN.oninput=()=>setInputs(+inN.value);
+
+document.getElementById("addLayer").onclick=()=>{
+  if(state.layers.length>=MAXLAYERS) return;
+  // inserta antes de la de salida para que la nueva sea oculta
+  const at=Math.max(0,state.layers.length-1);
+  state.layers.splice(at,0,{neurons:3,activation:"relu"});
+  refresh(true);
+};
+
+/* vista */
+const vFull=document.getElementById("vFull"), vPart=document.getElementById("vPart");
+vFull.onclick=()=>{view="full"; vFull.classList.add("on"); vPart.classList.remove("on"); renderFormula();};
+vPart.onclick=()=>{view="partial"; vPart.classList.add("on"); vFull.classList.remove("on"); renderFormula();};
+
+/* tamaño de fuente */
+document.getElementById("fsize").oninput=applyFont;
+
+/* arranque (espera a KaTeX) */
+function boot(){
+  if(!window.katex){ return setTimeout(boot,60); }
+  renderPresets();
+  refresh(true);
+}
+boot();
+</script>
+</body>
+</html>
